@@ -3,7 +3,7 @@
  * Plugin Name: Efficient Related Posts
  * Plugin URI: http://xavisys.com/wordpress-plugins/efficient-related-posts/
  * Description: A related posts plugin that works quickly even with thousands of posts and tags
- * Version: 0.3.8
+ * Version: 0.4.0
  * Author: Aaron D. Campbell
  * Author URI: http://xavisys.com/
  * Text Domain: efficient-related-posts
@@ -14,8 +14,8 @@
  * It helps us avoid name collisions
  * http://codex.wordpress.org/Writing_a_Plugin#Avoiding_Function_Name_Collisions
  */
-require_once('xavisys-plugin-framework.php');
-class efficientRelatedPosts extends XavisysPlugin {
+require_once('range-plugin-framework.php');
+class efficientRelatedPosts extends RangePlugin {
 	/**
 	 * @var efficientRelatedPosts - Static property to hold our singleton instance
 	 */
@@ -60,11 +60,11 @@ class efficientRelatedPosts extends XavisysPlugin {
 		}
 	}
 
-	public function addOptionsMetaBoxes() {
-		add_meta_box( $this->_slug . '-general-settings', __('General Settings', $this->_slug), array($this, 'generalSettingsMetaBox'), 'xavisys-' . $this->_slug, 'main');
-		add_meta_box( $this->_slug . '-process-posts', __('Build Relations', $this->_slug), array($this, 'processPostsMetaBox'), 'xavisys-' . $this->_slug, 'main-2');
+	public function add_options_meta_boxes() {
+		add_meta_box( $this->_slug . '-general-settings', __('General Settings', $this->_slug), array($this, 'generalSettingsMetaBox'), 'range-' . $this->_slug, 'main');
+		add_meta_box( $this->_slug . '-process-posts', __('Build Relations', $this->_slug), array($this, 'processPostsMetaBox'), 'range-' . $this->_slug, 'main-2');
 		if (get_option('erp-processedPosts')) {
-			add_meta_box( $this->_slug . '-continue-processing-posts', __('Continue Processing Posts/Pages', $this->_slug), array($this, 'continueProcessingPostsMetaBox'), 'xavisys-' . $this->_slug, 'main-2');
+			add_meta_box( $this->_slug . '-continue-processing-posts', __('Continue Processing Posts/Pages', $this->_slug), array($this, 'continueProcessingPostsMetaBox'), 'range-' . $this->_slug, 'main-2');
 		}
 	}
 
@@ -303,22 +303,19 @@ class efficientRelatedPosts extends XavisysPlugin {
 						'permalink'		=> get_permalink($related_post->ID)
 					);
 				}
-				$link = "<a href='{$p['permalink']}' title='" . esc_attr(wptexturize($p['post_title']))."'>".wptexturize($p['post_title']).'</a>';
-				/**
-				 * @todo Make a before and after setting for this
-				 */
+				$title = apply_filters( 'erp-related-link-content', wptexturize( $p['post_title'] ), $p, $settings );
+				$link = '<a href="' . esc_url( $p['permalink'] ) . '" title="' . esc_attr( wptexturize( $p['post_title'] ) ) . '">' . $title . '</a>';
+				$link = apply_filters( 'erp-related-link', $link, $p, $settings );
 				$output .= "<li>{$link}</li>";
 			}
 		}
 
-		/**
-		 * @todo Make a before and after setting for this
-		 */
 		$output = "<ul class='related_post'>{$output}</ul>";
 
-		if ( !empty($settings['title']) ) {
+		if ( !empty($settings['title']) )
 			$output = "<h3 class='related_post_title'>{$settings['title']}</h3>{$output}";
-		}
+
+		$output = apply_filters( 'erp-related-links-output', $output, $p, $settings );
 
 		return $output;
 	}
@@ -405,9 +402,9 @@ QUERY;
 						$threshold = $related_post->matches;
 						//unset($related_post->matches);
 						$related_post->permalink = get_permalink($related_post->ID);
-						if ( function_exists('get_the_post_image') ) {
-							$related_post->post_image = get_the_post_image($related_post->ID);
-						}
+						if ( function_exists('get_the_post_thumbnail') )
+							$related_post->post_image = get_the_post_thumbnail( $related_post->ID, apply_filters( 'erp-related-post-image-size', 'post-thumbnail' ) );
+
 						$relatedPostsToStore[] = (array)$related_post;
 					}
 				}
