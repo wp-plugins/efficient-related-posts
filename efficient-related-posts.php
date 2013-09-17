@@ -3,7 +3,7 @@
  * Plugin Name: Efficient Related Posts
  * Plugin URI: http://xavisys.com/wordpress-plugins/efficient-related-posts/
  * Description: A related posts plugin that works quickly even with thousands of posts and tags
- * Version: 0.4.0
+ * Version: 0.4.1
  * Author: Aaron D. Campbell
  * Author URI: http://xavisys.com/
  * Text Domain: efficient-related-posts
@@ -51,7 +51,7 @@ class efficientRelatedPosts extends RangePlugin {
 		add_filter( 'erp-get-related-posts', array( $this, 'getRelatedPosts' ) );
 	}
 
-	protected function _postSettingsInit() {
+	protected function _post_settings_init() {
 		if ( $this->_settings['erp']['auto_insert'] != 'no' ) {
 			add_filter('the_content', array( $this, 'filterPostContent'), 99);
 		}
